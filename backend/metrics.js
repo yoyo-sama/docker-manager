@@ -2,13 +2,43 @@ const os = require('os');
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-function getHostMetrics() {
+// Background CPU sampler: /proc stats are cumulative since boot,
+// so usage percent must be computed on a delta between two snapshots.
+function snapshotCpuTimes() {
   const cpus = os.cpus();
-  const total = cpus.reduce((s, c) => s + c.times.user + c.times.nice + c.times.sys + c.times.idle, 0);
-  const idle = cpus.reduce((s, c) => s + c.times.idle, 0);
-  const cpu = cpus.length > 0 ? ((total - idle) / total) * 100 : 0;
+  let idle = 0;
+  let total = 0;
+  for (const c of cpus) {
+    idle += c.times.idle;
+    total += c.times.user + c.times.nice + c.times.sys + c.times.idle + c.times.irq;
+  }
+  return { idle, total };
+}
+
+let cpuPrevSample = snapshotCpuTimes();
+let cpuDeltaPercent = null;
+
+setInterval(() => {
+  const cur = snapshotCpuTimes();
+  const idleDiff = cur.idle - cpuPrevSample.idle;
+  const totalDiff = cur.total - cpuPrevSample.total;
+  if (totalDiff > 0) {
+    cpuDeltaPercent = ((totalDiff - idleDiff) / totalDiff) * 100;
+  }
+  cpuPrevSample = cur;
+}, 1000).unref();
+
+function getHostMetrics() {
+  // Fallback to boot-average until the first sampler tick
+  let cpu = null;
+  if (cpuDeltaPercent !== null) {
+    cpu = cpuDeltaPercent;
+  } else {
+    const { idle, total } = snapshotCpuTimes();
+    cpu = total > 0 ? ((total - idle) / total) * 100 : 0;
+  }
   const memTotal = os.totalmem();
-  const memFree = os.freemem();
+  const memFree = os.freemem(); // MemAvailable on Linux (libuv >= 1.45)
   const mem = ((memTotal - memFree) / memTotal) * 100;
   return {
     cpu_percent: cpu,
@@ -94,12 +124,26 @@ function getGpuMemoryByContainer() {
   return map;
 }
 
-function getContainerStats(stats) {
+function getContainerStats(stats, prevSample) {
   const cpuTotal = stats.cpu_stats?.cpu_usage?.total_usage || 0;
-  const systemTotal = stats.cpu_stats?.system_cpu_usage || 1;
-  const cpuPercent = (cpuTotal / systemTotal) * 100;
+  const systemTotal = stats.cpu_stats?.system_cpu_usage || 0;
+  const onlineCpus = stats.cpu_stats?.online_cpus || os.cpus().length;
 
-  const memUsage = stats.memory_stats?.usage || 0;
+  // Docker formula: (Δcontainer_cpu / Δsystem_cpu) × online CPUs × 100
+  let cpuPercent;
+  if (prevSample && systemTotal > prevSample.sys && cpuTotal >= prevSample.cpu) {
+    const cpuDelta = cpuTotal - prevSample.cpu;
+    const sysDelta = systemTotal - prevSample.sys;
+    cpuPercent = (cpuDelta / sysDelta) * onlineCpus * 100;
+  } else {
+    cpuPercent = (cpuTotal / (systemTotal || 1)) * onlineCpus * 100;
+  }
+  cpuPercent = Math.min(100, Math.max(0, cpuPercent));
+
+  // Active memory: subtract page cache (same convention as docker stats CLI)
+  const memUsageRaw = stats.memory_stats?.usage || 0;
+  const inactiveFile = stats.memory_stats?.stats?.inactive_file || 0;
+  const memUsage = Math.max(0, memUsageRaw - inactiveFile);
   const memLimit = stats.memory_stats?.limit || 1;
   const memPercent = (memUsage / memLimit) * 100;
 

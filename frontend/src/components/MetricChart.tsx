@@ -17,6 +17,19 @@ interface Props {
 export default function MetricChart({ title, data, dataKey, unit, color = '#0ea5e9', yAxisDomain }: Props) {
   const gradientId = `grad-${dataKey}`;
 
+  // Auto-scale on the observed window when no explicit domain is provided
+  let domain = yAxisDomain;
+  if (!domain && data.length > 0) {
+    const values = data.map((d) => Number(d[dataKey] ?? 0)).filter(Number.isFinite);
+    if (values.length > 0) {
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const pad = Math.max(2, (max - min) * 0.15);
+      domain = [Math.max(0, Math.floor(min - pad)), Math.min(100, Math.ceil(max + pad))];
+      if (domain[0] >= domain[1]) domain = [domain[0], domain[1] + 1];
+    }
+  }
+
   return (
     <div className="bg-surface border border-line rounded-xl p-4">
       <h3 className="text-sm font-semibold tracking-tight mb-4">{title}</h3>
@@ -40,7 +53,7 @@ export default function MetricChart({ title, data, dataKey, unit, color = '#0ea5
             tick={{ fontSize: 10, fill: 'var(--muted)' }}
             tickLine={false}
             axisLine={false}
-            domain={yAxisDomain}
+            domain={domain}
           />
           <Tooltip
             contentStyle={{

@@ -20,6 +20,10 @@ function StatusBadge({ running }: { running: boolean }) {
   );
 }
 
+function fmtGiB(bytes: number): string {
+  return `${(bytes / 2 ** 30).toFixed(1)} GiB`;
+}
+
 export default function Dashboard({ containers, onContainerSelect }: Props) {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
@@ -31,6 +35,11 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
         const sysRes = await fetch('/api/system');
         const sysData = await sysRes.json();
         setMetrics(sysData);
+        const gpus = sysData.gpus || [];
+        const gpuAvg =
+          gpus.length > 0
+            ? gpus.reduce((s: number, g: { utilization_percent: number | null }) => s + (g.utilization_percent ?? 0), 0) / gpus.length
+            : 0;
         setHistory((prev) => [
           ...prev.slice(-59),
           {
@@ -38,6 +47,7 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
             cpu: sysData.cpu_percent,
             memory: sysData.memory_percent,
             disk: sysData.disk_percent,
+            gpu: gpuAvg,
           },
         ]);
       } catch {
@@ -74,6 +84,7 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
           value={(metrics?.memory_percent ?? 0).toFixed(1)}
           unit="%"
           color="green"
+          subtitle={metrics ? `${fmtGiB(metrics.memory_used_bytes)} / ${fmtGiB(metrics.memory_total_bytes)}` : undefined}
           icon={<MemoryStick size={15} strokeWidth={2} />}
         />
         <StatCard
@@ -97,9 +108,10 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <MetricChart title="CPU Usage" data={history} dataKey="cpu" unit="%" color="#0ea5e9" yAxisDomain={[0, 100]} />
-        <MetricChart title="Memory Usage" data={history} dataKey="memory" unit="%" color="#10b981" yAxisDomain={[0, 100]} />
+        <MetricChart title="Memory Usage" data={history} dataKey="memory" unit="%" color="#10b981" />
+        <MetricChart title="GPU Usage" data={history} dataKey="gpu" unit="%" color="#f59e0b" yAxisDomain={[0, 100]} />
       </div>
 
       {metrics && metrics.gpus.length > 0 && (

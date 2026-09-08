@@ -75,6 +75,7 @@ export interface HistoryPoint {
   cpu: number;
   memory: number;
   disk: number;
+  gpu: number;
   [key: string]: number | string;
 }
 
@@ -87,4 +88,4 @@ export interface ContainerHistoryPoint {
   [key: string]: number | string;
 }
 
-export type View = 'dashboard' | 'container-detail';
+export type View = 'dashboard' | 'container-detail' | 'dgx';

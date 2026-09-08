@@ -1,4 +1,4 @@
-import { Container, LayoutDashboard, Moon, Sun } from 'lucide-react';
+import { Container, Gauge, LayoutDashboard, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 import type { View } from '../types';
 
@@ -22,7 +22,7 @@ export default function Sidebar({ currentView, onViewChange }: Props) {
         </div>
       </div>
 
-      <nav className="flex-1 p-3" aria-label="Main navigation">
+      <nav className="flex-1 p-3 space-y-1" aria-label="Main navigation">
         <button
           onClick={() => onViewChange('dashboard')}
           className={`w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20 ${
@@ -33,6 +33,17 @@ export default function Sidebar({ currentView, onViewChange }: Props) {
         >
           <LayoutDashboard size={16} strokeWidth={2} />
           Dashboard
+        </button>
+        <button
+          onClick={() => onViewChange('dgx')}
+          className={`w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20 ${
+            currentView === 'dgx'
+              ? 'bg-hover text-fg'
+              : 'text-muted hover:text-fg hover:bg-hover'
+          }`}
+        >
+          <Gauge size={16} strokeWidth={2} />
+          DGX Dashboard
         </button>
       </nav>
 

@@ -134,12 +134,20 @@ app.get('/api/containers/:id', async (req, res) => {
 });
 
 // Get container stats
+const containerCpuSamples = new Map(); // containerId -> { cpu, sys }
+
 app.get('/api/containers/:id/stats', async (req, res) => {
   try {
     const container = docker.getContainer(req.params.id);
     const inspect = await container.inspect();
     const stats = await container.stats({ stream: false });
-    const base = getContainerStats(stats);
+    const prevSample = containerCpuSamples.get(req.params.id) || null;
+    const base = getContainerStats(stats, prevSample);
+    if (containerCpuSamples.size > 1000) containerCpuSamples.clear();
+    containerCpuSamples.set(req.params.id, {
+      cpu: stats.cpu_stats?.cpu_usage?.total_usage || 0,
+      sys: stats.cpu_stats?.system_cpu_usage || 0,
+    });
     const gpuMemMap = getGpuMemoryByContainer();
     const vramBytes = gpuMemMap.get(inspect.Id) || gpuMemMap.get(req.params.id) || 0;
     const memTotal = os.totalmem();

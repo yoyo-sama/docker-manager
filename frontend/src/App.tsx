@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, Rocket } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ContainerDetail from './components/ContainerDetail';
+import DgxDashboard from './components/DgxDashboard';
 import DeployModal from './components/DeployModal';
 import DeployLog from './components/DeployLog';
 import ConfirmModal from './components/ConfirmModal';
@@ -130,7 +131,9 @@ function App() {
   const headerTitle =
     currentView === 'dashboard'
       ? 'Dashboard'
-      : containers.find((c) => c.id === selectedContainerId)?.name ?? 'Container detail';
+      : currentView === 'dgx'
+        ? 'DGX Dashboard'
+        : containers.find((c) => c.id === selectedContainerId)?.name ?? 'Container detail';
 
   return (
     <div className="flex h-screen bg-base text-fg font-sans">
@@ -172,6 +175,8 @@ function App() {
           {currentView === 'dashboard' && (
             <Dashboard containers={containers} onContainerSelect={handleContainerSelect} />
           )}
+
+          {currentView === 'dgx' && <DgxDashboard />}
 
           {currentView === 'container-detail' && selectedContainerId && (
             <ContainerDetail
