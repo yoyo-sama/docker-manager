@@ -66,8 +66,36 @@ Everything else works normally; the GPUs section simply stays empty.
 
 ### Update
 
+Containers never update themselves: they keep running the image they were started from. To update an existing installation:
+
 ```bash
+cd docker-manager
+
+# 1. Fetch the latest code
 git pull
+
+# 2. Rebuild the image and restart the container
+docker compose up -d --build
+```
+
+`docker compose up -d --build` takes care of everything: it rebuilds the single image from the new sources (frontend + backend), stops the outdated container and starts a new one, reusing the settings from `docker-compose.yml` (Docker socket, `pid: host`, GPU reservation, port mapping).
+
+The update is safe for your environment:
+- the application is **stateless** (no database, no local data to back up)
+- the containers it manages are **not affected** — they keep running during the update
+- your theme preference is stored in the browser and survives updates
+
+Verify the update:
+
+```bash
+docker compose ps        # the app container should be "Up"
+git log --oneline -1     # installed version
+```
+
+To roll back to a previous version:
+
+```bash
+git checkout <commit-hash>
 docker compose up -d --build
 ```
 

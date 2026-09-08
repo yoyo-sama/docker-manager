@@ -66,8 +66,36 @@ Tout le reste fonctionne normalement ; la section GPUs reste simplement vide.
 
 ### Mettre à jour
 
+Les conteneurs ne se mettent jamais à jour eux-mêmes : ils continuent de tourner sur l'image avec laquelle ils ont été démarrés. Pour mettre à jour une installation existante :
+
 ```bash
+cd docker-manager
+
+# 1. Récupérer le dernier code
 git pull
+
+# 2. Reconstruire l'image et redémarrer le conteneur
+docker compose up -d --build
+```
+
+`docker compose up -d --build` s'occupe de tout : il reconstruit l'image unique à partir des nouvelles sources (frontend + backend), arrête le conteneur obsolète et en démarre un nouveau, en réutilisant les réglages de `docker-compose.yml` (socket Docker, `pid: host`, réservation GPU, mappage de port).
+
+La mise à jour est sans risque pour votre environnement :
+- l'application est **sans état** (pas de base de données, aucune donnée locale à sauvegarder)
+- les conteneurs qu'elle gère ne **sont pas affectés** — ils continuent de tourner pendant la mise à jour
+- votre préférence de thème est stockée dans le navigateur et survit aux mises à jour
+
+Vérifier la mise à jour :
+
+```bash
+docker compose ps        # le conteneur app doit être "Up"
+git log --oneline -1     # version installée
+```
+
+Pour revenir à une version précédente :
+
+```bash
+git checkout <hash-du-commit>
 docker compose up -d --build
 ```
 
