@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Loader2, RefreshCw, Rocket } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ContainerDetail from './components/ContainerDetail';
@@ -126,56 +127,61 @@ function App() {
     fetchContainers();
   };
 
+  const headerTitle =
+    currentView === 'dashboard'
+      ? 'Dashboard'
+      : containers.find((c) => c.id === selectedContainerId)?.name ?? 'Container detail';
+
   return (
-    <div className="flex h-screen bg-gray-900 text-gray-100 font-sans">
+    <div className="flex h-screen bg-base text-fg font-sans">
       <Sidebar currentView={currentView} onViewChange={setCurrentView} />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">
-            {currentView === 'dashboard' ? 'Dashboard' : 'Container Detail'}
-          </h1>
-          <div className="flex gap-3 items-center">
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <header className="sticky top-0 z-40 h-16 shrink-0 px-6 border-b border-line bg-base/80 backdrop-blur flex justify-between items-center">
+          <h1 className="text-base font-semibold tracking-tight">{headerTitle}</h1>
+          <div className="flex gap-2.5 items-center">
             <button
               onClick={() => setShowDeployModal(true)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-md transition-colors text-sm font-medium"
+              className="px-3.5 h-9 rounded-lg bg-accent text-accent-fg text-sm font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/30"
             >
+              <Rocket size={14} strokeWidth={2.2} />
               Deploy
             </button>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-md transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              className="px-3.5 h-9 rounded-lg border border-line text-sm font-medium hover:bg-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20"
             >
-              {refreshing && (
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
+              {refreshing ? (
+                <Loader2 size={14} strokeWidth={2} className="animate-spin" />
+              ) : (
+                <RefreshCw size={14} strokeWidth={2} />
               )}
               Refresh
             </button>
           </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto">
+          {error && (
+            <div className="m-6 p-4 rounded-lg border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          {currentView === 'dashboard' && (
+            <Dashboard containers={containers} onContainerSelect={handleContainerSelect} />
+          )}
+
+          {currentView === 'container-detail' && selectedContainerId && (
+            <ContainerDetail
+              containerId={selectedContainerId}
+              onBack={handleBack}
+              onAction={handleAction}
+              onDelete={handleDelete}
+            />
+          )}
         </div>
-
-        {error && (
-          <div className="m-6 p-4 bg-red-900/50 border border-red-500 text-red-200 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {currentView === 'dashboard' && (
-          <Dashboard containers={containers} onContainerSelect={handleContainerSelect} />
-        )}
-
-        {currentView === 'container-detail' && selectedContainerId && (
-          <ContainerDetail
-            containerId={selectedContainerId}
-            onBack={handleBack}
-            onAction={handleAction}
-            onDelete={handleDelete}
-          />
-        )}
       </main>
 
       {showDeployModal && (

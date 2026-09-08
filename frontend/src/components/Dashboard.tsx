@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Boxes, CircuitBoard, Cpu, ExternalLink, HardDrive, MemoryStick } from 'lucide-react';
 import StatCard from './StatCard';
 import MetricChart from './MetricChart';
 import type { SystemMetrics, Container, HistoryPoint } from '../types';
@@ -6,6 +7,17 @@ import type { SystemMetrics, Container, HistoryPoint } from '../types';
 interface Props {
   containers: Container[];
   onContainerSelect: (id: string) => void;
+}
+
+function StatusBadge({ running }: { running: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+      <span className={`w-1.5 h-1.5 rounded-full ${running ? 'bg-emerald-500' : 'bg-red-500'}`} />
+      <span className={running ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
+        {running ? 'Running' : 'Stopped'}
+      </span>
+    </span>
+  );
 }
 
 export default function Dashboard({ containers, onContainerSelect }: Props) {
@@ -42,54 +54,89 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
   if (loading && !metrics) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-line border-t-fg"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 overflow-y-auto">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <StatCard title="CPU" value={(metrics?.cpu_percent ?? 0).toFixed(1)} unit="%" color="blue" />
-        <StatCard title="Memory" value={(metrics?.memory_percent ?? 0).toFixed(1)} unit="%" color="green" />
-        <StatCard title="Disk" value={(metrics?.disk_percent ?? 0).toFixed(1)} unit="%" color="yellow" />
-        <StatCard title="GPUs" value={metrics?.gpus.length ?? 0} color="purple" />
-        <StatCard title="Containers" value={metrics?.container_count ?? 0} color="blue" />
+    <div className="p-6 lg:p-8 overflow-y-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <StatCard
+          title="CPU"
+          value={(metrics?.cpu_percent ?? 0).toFixed(1)}
+          unit="%"
+          color="blue"
+          icon={<Cpu size={15} strokeWidth={2} />}
+        />
+        <StatCard
+          title="Memory"
+          value={(metrics?.memory_percent ?? 0).toFixed(1)}
+          unit="%"
+          color="green"
+          icon={<MemoryStick size={15} strokeWidth={2} />}
+        />
+        <StatCard
+          title="Disk"
+          value={(metrics?.disk_percent ?? 0).toFixed(1)}
+          unit="%"
+          color="yellow"
+          icon={<HardDrive size={15} strokeWidth={2} />}
+        />
+        <StatCard
+          title="GPUs"
+          value={metrics?.gpus.length ?? 0}
+          color="purple"
+          icon={<CircuitBoard size={15} strokeWidth={2} />}
+        />
+        <StatCard
+          title="Containers"
+          value={metrics?.container_count ?? 0}
+          color="blue"
+          icon={<Boxes size={15} strokeWidth={2} />}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <MetricChart title="CPU Usage" data={history} dataKey="cpu" unit="%" color="#3b82f6" yAxisDomain={[0, 100]} />
-        <MetricChart title="Memory Usage" data={history} dataKey="memory" unit="%" color="#22c55e" yAxisDomain={[0, 100]} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <MetricChart title="CPU Usage" data={history} dataKey="cpu" unit="%" color="#0ea5e9" yAxisDomain={[0, 100]} />
+        <MetricChart title="Memory Usage" data={history} dataKey="memory" unit="%" color="#10b981" yAxisDomain={[0, 100]} />
       </div>
 
       {metrics && metrics.gpus.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-3">GPUs</h2>
+          <h2 className="text-sm font-semibold tracking-tight mb-3">GPUs</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {metrics.gpus.map((gpu) => (
-              <div key={gpu.index} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <h3 className="font-semibold mb-2">
-                  {gpu.name} (GPU{gpu.index})
+              <div key={gpu.index} className="bg-surface rounded-xl p-4 border border-line">
+                <h3 className="text-sm font-semibold tracking-tight mb-3 truncate" title={`${gpu.name} (GPU${gpu.index})`}>
+                  {gpu.name} <span className="text-muted font-normal">(GPU{gpu.index})</span>
                 </h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    Util: <span className="text-yellow-400">{(gpu.utilization_percent ?? 0).toFixed(1)}%</span>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted">Util</span>
+                    <span className="tabular-nums font-medium text-amber-600 dark:text-amber-400">
+                      {(gpu.utilization_percent ?? 0).toFixed(1)}%
+                    </span>
                   </div>
-                  <div>
-                    VRAM:{' '}
-                    <span className="text-blue-400">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted">VRAM</span>
+                    <span className="tabular-nums font-medium text-sky-600 dark:text-sky-400">
                       {gpu.vram_used_mb != null && gpu.vram_total_mb != null
                         ? `${gpu.vram_used_mb.toFixed(0)}/${gpu.vram_total_mb.toFixed(0)} MB`
                         : 'N/A'}
                     </span>
                   </div>
-                  <div>
-                    Temp: <span className="text-red-400">{(gpu.temperature_celsius ?? 0).toFixed(0)}°C</span>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted">Temp</span>
+                    <span className="tabular-nums font-medium text-red-600 dark:text-red-400">
+                      {(gpu.temperature_celsius ?? 0).toFixed(0)}°C
+                    </span>
                   </div>
-                  <div>
-                    Power: <span className="text-purple-400">{(gpu.power_draw_watts ?? 0).toFixed(1)}W</span>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted">Power</span>
+                    <span className="tabular-nums font-medium text-violet-600 dark:text-violet-400">
+                      {(gpu.power_draw_watts ?? 0).toFixed(1)}W
+                    </span>
                   </div>
                 </div>
               </div>
@@ -99,38 +146,44 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
       )}
 
       <div>
-        <h2 className="text-xl font-semibold mb-3">Containers</h2>
-        <div className="overflow-x-auto bg-gray-800 rounded-lg">
+        <h2 className="text-sm font-semibold tracking-tight mb-3">Containers</h2>
+        <div className="overflow-x-auto bg-surface rounded-xl border border-line">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-gray-700/50">
-              <tr className="border-b border-gray-700">
-                <th className="p-4 font-semibold">Name</th>
-                <th className="p-4 font-semibold">Image</th>
-                <th className="p-4 font-semibold">Directory</th>
-                <th className="p-4 font-semibold">URL</th>
-                <th className="p-4 font-semibold">Status</th>
+            <thead>
+              <tr className="border-b border-line">
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted">Name</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted">Image</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted">Directory</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted">URL</th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className="divide-y divide-line">
               {containers.map((container) => (
                 <tr
                   key={container.id}
                   onClick={() => onContainerSelect(container.id)}
-                  className="hover:bg-gray-700/30 transition-colors cursor-pointer"
+                  className="hover:bg-hover transition-colors cursor-pointer"
                 >
-                  <td className="p-4">
-                    <span className="text-blue-400 font-medium">{container.name}</span>
-                    <span className="text-xs text-gray-500 ml-2 font-mono">{container.shortId}</span>
+                  <td className="px-4 py-3">
+                    <span className="font-medium">{container.name}</span>
+                    <span className="ml-2 font-mono text-[11px] text-muted">{container.shortId}</span>
                   </td>
-                  <td className="p-4 text-gray-400 text-sm">{container.image}</td>
-                  <td className="p-4 text-gray-300 text-sm">
-                    <span className="font-mono">
+                  <td className="px-4 py-3 text-muted text-xs font-mono max-w-[220px] truncate" title={container.image}>
+                    {container.image}
+                  </td>
+                  <td className="px-4 py-3 text-xs max-w-[260px]">
+                    <span className="font-mono text-muted block truncate" title={
+                      container.binds.length > 0
+                        ? container.binds.map((b) => b.source).join(', ')
+                        : container.workingDir
+                    }>
                       {container.binds.length > 0
                         ? container.binds.map((b) => b.source).join(', ')
                         : container.workingDir || '-'}
                     </span>
                   </td>
-                  <td className="p-4 text-sm">
+                  <td className="px-4 py-3">
                     {container.running && container.publishedPorts.length > 0 ? (
                       <div className="flex flex-col gap-1">
                         {container.publishedPorts.map((p, i) => (
@@ -140,12 +193,13 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-purple-400 hover:text-purple-300 underline break-all"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline"
                             >
                               :{p.hostPort}
+                              <ExternalLink size={11} strokeWidth={2} />
                             </a>
                             {p.hostNetwork && (
-                              <span className="px-1 rounded bg-purple-900/60 text-purple-300 text-[10px] font-semibold uppercase">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-violet-500/10 text-violet-600 dark:text-violet-400">
                                 host
                               </span>
                             )}
@@ -153,17 +207,11 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
                         ))}
                       </div>
                     ) : (
-                      <span className="text-gray-600">-</span>
+                      <span className="text-muted/50">-</span>
                     )}
                   </td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        container.running ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-                      }`}
-                    >
-                      {container.running ? 'Running' : 'Stopped'}
-                    </span>
+                  <td className="px-4 py-3">
+                    <StatusBadge running={container.running} />
                   </td>
                 </tr>
               ))}

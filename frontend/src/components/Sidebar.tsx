@@ -1,3 +1,5 @@
+import { Container, LayoutDashboard, Moon, Sun } from 'lucide-react';
+import { useTheme } from '../lib/theme';
 import type { View } from '../types';
 
 interface Props {
@@ -6,23 +8,44 @@ interface Props {
 }
 
 export default function Sidebar({ currentView, onViewChange }: Props) {
+  const { isDark, toggle } = useTheme();
+
   return (
-    <div className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
-      <div className="p-4 border-b border-gray-700">
-        <h1 className="text-xl font-bold">Docker Manager</h1>
+    <aside className="w-60 shrink-0 bg-surface border-r border-line flex flex-col">
+      <div className="h-16 flex items-center gap-3 px-5 border-b border-line">
+        <div className="w-8 h-8 rounded-lg bg-accent text-accent-fg flex items-center justify-center shrink-0">
+          <Container size={17} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-sm font-semibold tracking-tight leading-tight">Docker Manager</h1>
+          <p className="text-[11px] text-muted leading-tight">Local instance</p>
+        </div>
       </div>
-      <nav className="flex-1 p-2">
+
+      <nav className="flex-1 p-3" aria-label="Main navigation">
         <button
           onClick={() => onViewChange('dashboard')}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors ${
+          className={`w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20 ${
             currentView === 'dashboard'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-300 hover:bg-gray-700'
+              ? 'bg-hover text-fg'
+              : 'text-muted hover:text-fg hover:bg-hover'
           }`}
         >
+          <LayoutDashboard size={16} strokeWidth={2} />
           Dashboard
         </button>
       </nav>
-    </div>
+
+      <div className="p-3 border-t border-line">
+        <button
+          onClick={toggle}
+          aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+          className="w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-sm font-medium text-muted hover:text-fg hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20"
+        >
+          {isDark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+          {isDark ? 'Light theme' : 'Dark theme'}
+        </button>
+      </div>
+    </aside>
   );
 }

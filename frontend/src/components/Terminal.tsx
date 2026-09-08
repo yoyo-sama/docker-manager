@@ -18,10 +18,10 @@ export default function Terminal({ containerId }: Props) {
       fontSize: 13,
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
       theme: {
-        background: '#111827',
-        foreground: '#e5e7eb',
-        cursor: '#a78bfa',
-        selectionBackground: '#4c1d95',
+        background: '#0d1117',
+        foreground: '#e6edf3',
+        cursor: '#79c0ff',
+        selectionBackground: '#388bfd66',
       },
       convertEol: true,
     });
@@ -99,10 +99,10 @@ export default function Terminal({ containerId }: Props) {
     <div className="w-full">
       <div
         ref={containerRef}
-        className="bg-gray-900 rounded-md overflow-hidden"
+        className="rounded-lg border border-line overflow-hidden bg-[#0d1117]"
         style={{ height: '380px' }}
       />
-      <p className="text-xs text-gray-500 mt-1">Interactive shell inside the container.</p>
+      <p className="text-xs text-muted mt-2">Interactive shell inside the container.</p>
     </div>
   );
 }

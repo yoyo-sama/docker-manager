@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ArrowDown, ArrowLeft, ArrowUp, Cpu, MemoryStick, SquareTerminal, Trash2 } from 'lucide-react';
 import StatCard from './StatCard';
 import MetricChart from './MetricChart';
 import Terminal from './Terminal';
@@ -61,7 +62,7 @@ export default function ContainerDetail({ containerId, onBack, onAction, onDelet
   if (loading && !container) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-line border-t-fg"></div>
       </div>
     );
   }
@@ -77,36 +78,63 @@ export default function ContainerDetail({ containerId, onBack, onAction, onDelet
     : [];
 
   return (
-    <div className="p-8 overflow-y-auto">
+    <div className="p-6 lg:p-8 overflow-y-auto">
       <button
         onClick={onBack}
-        className="mb-4 text-gray-400 hover:text-white text-sm flex items-center gap-2"
+        className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20 rounded px-1 py-0.5"
       >
-        ← Back to Dashboard
+        <ArrowLeft size={15} strokeWidth={2} />
+        Back to Dashboard
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">{container.name}</h1>
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <h1 className="text-xl font-semibold tracking-tight">{container.name}</h1>
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+          <span className={`w-1.5 h-1.5 rounded-full ${container.running ? 'bg-emerald-500' : 'bg-red-500'}`} />
+          <span className={container.running ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
+            {container.running ? 'Running' : 'Stopped'}
+          </span>
+        </span>
+        <span className="font-mono text-[11px] text-muted">{container.shortId}</span>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="CPU" value={(stats?.cpu_percent ?? 0).toFixed(1)} unit="%" color="blue" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard
+          title="CPU"
+          value={(stats?.cpu_percent ?? 0).toFixed(1)}
+          unit="%"
+          color="blue"
+          icon={<Cpu size={15} strokeWidth={2} />}
+        />
         <StatCard
           title="Memory (CPU + GPU)"
           value={formatBytes(stats?.memory_usage_combined ?? 0)}
           unit={` (${(stats?.memory_percent_combined ?? 0).toFixed(1)}%)`}
           subtitle={`CPU ${formatBytes(stats?.memory_usage_bytes ?? 0)} · GPU ${formatBytes(stats?.vram_usage_bytes ?? 0)}`}
           color="green"
+          icon={<MemoryStick size={15} strokeWidth={2} />}
         />
-        <StatCard title="Network RX" value={formatBytes(stats?.network_rx_bytes ?? 0)} color="yellow" />
-        <StatCard title="Network TX" value={formatBytes(stats?.network_tx_bytes ?? 0)} color="purple" />
+        <StatCard
+          title="Network RX"
+          value={formatBytes(stats?.network_rx_bytes ?? 0)}
+          color="yellow"
+          icon={<ArrowDown size={15} strokeWidth={2} />}
+        />
+        <StatCard
+          title="Network TX"
+          value={formatBytes(stats?.network_tx_bytes ?? 0)}
+          color="purple"
+          icon={<ArrowUp size={15} strokeWidth={2} />}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <MetricChart
           title="CPU Usage"
           data={history}
           dataKey="cpu_percent"
           unit="%"
-          color="#3b82f6"
+          color="#0ea5e9"
           yAxisDomain={[0, 100]}
         />
         <MetricChart
@@ -114,76 +142,85 @@ export default function ContainerDetail({ containerId, onBack, onAction, onDelet
           data={history}
           dataKey="memory_percent_combined"
           unit="%"
-          color="#22c55e"
+          color="#10b981"
           yAxisDomain={[0, 100]}
         />
       </div>
 
-      <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-6">
-        <h2 className="text-xl font-semibold mb-3">Container Info</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-400">Image:</span>
-            <span className="ml-2 text-gray-300">{container.image}</span>
+      <div className="bg-surface rounded-xl border border-line mb-6">
+        <h2 className="text-sm font-semibold tracking-tight px-5 pt-4 pb-3 border-b border-line">Container Info</h2>
+        <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <div className="flex justify-between gap-4 min-w-0">
+            <span className="text-muted shrink-0">Image</span>
+            <span className="font-mono text-xs truncate self-center" title={container.image}>{container.image}</span>
           </div>
-          <div>
-            <span className="text-gray-400">Status:</span>
-            <span className="ml-2 text-gray-300">{container.status}</span>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted shrink-0">Status</span>
+            <span className="font-medium">{container.status}</span>
           </div>
-          <div>
-            <span className="text-gray-400">Restart Policy:</span>
-            <span className="ml-2 text-gray-300">{container.restartPolicy || 'none'}</span>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted shrink-0">Restart policy</span>
+            <span className="font-mono text-xs self-center">{container.restartPolicy || 'none'}</span>
           </div>
-          <div>
-            <span className="text-gray-400">Started:</span>
-            <span className="ml-2 text-gray-300">{new Date(container.startedAt).toLocaleString()}</span>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted shrink-0">Started</span>
+            <span className="tabular-nums">{new Date(container.startedAt).toLocaleString()}</span>
           </div>
           {ports.length > 0 && (
-            <div>
-              <span className="text-gray-400">Ports:</span>
-              <div className="ml-2 text-gray-300">
+            <div className="flex justify-between gap-4 min-w-0 md:col-span-2">
+              <span className="text-muted shrink-0">Ports</span>
+              <div className="text-right min-w-0">
                 {ports.map((p, i) => (
-                  <div key={i}>{p}</div>
+                  <div key={i} className="font-mono text-xs leading-relaxed">{p}</div>
                 ))}
               </div>
             </div>
           )}
           {container.command && container.command.length > 0 && (
-            <div>
-              <span className="text-gray-400">Command:</span>
-              <span className="ml-2 text-gray-300 font-mono">{container.command.join(' ')}</span>
+            <div className="flex justify-between gap-4 min-w-0 md:col-span-2">
+              <span className="text-muted shrink-0">Command</span>
+              <span className="font-mono text-xs truncate self-center" title={container.command.join(' ')}>
+                {container.command.join(' ')}
+              </span>
             </div>
           )}
         </div>
       </div>
 
       {container.running && (
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 mb-6">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xl font-semibold">Terminal</h2>
+        <div className="bg-surface rounded-xl border border-line mb-6">
+          <div className="flex justify-between items-center px-5 py-3 border-b border-line">
+            <h2 className="text-sm font-semibold tracking-tight inline-flex items-center gap-2">
+              <SquareTerminal size={15} strokeWidth={2} className="text-muted" />
+              Terminal
+            </h2>
             <button
               onClick={() => setShowTerminal((prev) => !prev)}
-              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded text-sm transition-colors"
+              className="px-3 h-8 rounded-lg border border-line text-sm font-medium hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20"
             >
               {showTerminal ? 'Hide terminal' : 'Open terminal'}
             </button>
           </div>
-          {showTerminal && <Terminal containerId={containerId} />}
+          {showTerminal && (
+            <div className="p-4">
+              <Terminal containerId={containerId} />
+            </div>
+          )}
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         {container.running ? (
           <>
             <button
               onClick={() => onAction(containerId, 'stop')}
-              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded text-sm transition-colors"
+              className="px-4 h-9 rounded-lg border border-line text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20"
             >
               Stop
             </button>
             <button
               onClick={() => onAction(containerId, 'restart')}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm transition-colors"
+              className="px-4 h-9 rounded-lg border border-line text-sm font-medium hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20"
             >
               Restart
             </button>
@@ -191,15 +228,16 @@ export default function ContainerDetail({ containerId, onBack, onAction, onDelet
         ) : (
           <button
             onClick={() => onAction(containerId, 'start')}
-            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded text-sm transition-colors"
+            className="px-4 h-9 rounded-lg bg-accent text-accent-fg text-sm font-medium hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/30"
           >
             Start
           </button>
         )}
         <button
           onClick={() => onDelete(containerId)}
-          className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-sm transition-colors"
+          className="px-4 h-9 rounded-lg border border-red-500/30 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
         >
+          <Trash2 size={14} strokeWidth={2} />
           Delete
         </button>
       </div>

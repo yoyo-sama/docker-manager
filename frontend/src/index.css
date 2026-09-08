@@ -1,1 +1,85 @@
 @import "tailwindcss";
+
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --elevated: #ffffff;
+  --line: rgba(0, 0, 0, 0.09);
+  --fg: #111113;
+  --muted: #6e6e78;
+  --hover: rgba(0, 0, 0, 0.045);
+  --accent-bg: #111113;
+  --accent-fg: #ffffff;
+  --scrollbar: rgba(0, 0, 0, 0.22);
+}
+
+.dark {
+  --bg: #0a0a0b;
+  --surface: #131315;
+  --elevated: #1a1a1d;
+  --line: rgba(255, 255, 255, 0.08);
+  --fg: #f4f4f5;
+  --muted: #9b9ba5;
+  --hover: rgba(255, 255, 255, 0.055);
+  --accent-bg: #f4f4f5;
+  --accent-fg: #0a0a0b;
+  --scrollbar: rgba(255, 255, 255, 0.16);
+}
+
+@theme inline {
+  --color-base: var(--bg);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-hover: var(--hover);
+  --color-accent: var(--accent-bg);
+  --color-accent-fg: var(--accent-fg);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+}
+
+html {
+  background-color: var(--bg);
+  color-scheme: light;
+}
+
+.dark html,
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: rgba(128, 128, 140, 0.3);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}

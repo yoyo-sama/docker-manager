@@ -6,33 +6,82 @@ Gestionnaire Docker web : surveillez et pilotez vos conteneurs depuis le navigat
 
 ## Fonctionnalités
 
-- **Dashboard système** : CPU, mémoire, disque, GPU NVIDIA (via `nvidia-smi`), compteurs conteneurs/images/volumes, graphiques temps réel
+- **Dashboard système** : CPU, mémoire, disque, GPU NVIDIA (via `nvidia-smi`), compteurs conteneurs/images/volumes, graphiques temps réel avec dégradés
 - **Liste des conteneurs** : statut, image, politique de redémarrage, **répertoire de lancement** (bind mounts hôtes + WorkingDir) et **lien direct vers l'app** pour chaque port TCP publié
 - **Auto-détection des ports host-network** : les apps en `network_mode: host` (sans port publié) voient leurs ports d'écoute détectés via `/proc` (croisement inodes sockets ↔ tables TCP)
 - **Détail conteneur** : stats CPU/RAM (mémoire CPU + GPU VRAM), réseau, graphiques d'historique, configuration (commande, ports, mounts)
 - **Terminal interactif** : shell in-browser (xterm.js + WebSocket) dans n'importe quel conteneur actif, avec détection automatique bash/sh et redimensionnement
 - **Déploiement GitHub** : clone → build → run d'un repo directement depuis l'UI, avec logs en direct (SSE), timeout et nettoyage automatiques
 - **Actions** : start / stop / restart / delete avec confirmation
+- **Thème sombre / clair** : interface monochrome moderne (police Inter, icônes Lucide, JetBrains Mono pour les données techniques), bascule persistée et défaut selon la préférence système
 
 ## Stack
 
 | Composant | Technologies |
 |---|---|
-| Frontend | React 19, Vite, TypeScript, TailwindCSS, xterm.js, Recharts |
+| Frontend | React 19, Vite, TypeScript, TailwindCSS v4, xterm.js, Recharts, Lucide |
 | Backend | Node.js, Express 5, dockerode, ws (WebSocket), SSE |
 | Reverse proxy | nginx (static + proxy `/api` + upgrade WebSocket) |
 
-## Lancement
+## Installation
 
-Prérequis : [Docker](https://docs.docker.com/get-docker/) avec le socket `/var/run/docker.sock` accessible.
+### Prérequis
+
+- [Docker Engine](https://docs.docker.com/get-docker/) ≥ 20.10 avec [Compose v2](https://docs.docker.com/compose/) (`docker compose`)
+- Le socket Docker `/var/run/docker.sock` doit être accessible à l'utilisateur qui lance le compose (le backend y accède via un bind mount)
+- *(Optionnel)* Pilotes NVIDIA + [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) pour les métriques GPU
+
+### Installer et démarrer
 
 ```bash
+# 1. Cloner le repo
+git clone https://github.com/yoyo-sama/docker-manager.git
+cd docker-manager
+
+# 2. Construire et démarrer (aucune variable d'environnement requise)
 docker compose up -d --build
 ```
 
 L'application est disponible sur **http://localhost:8081**.
 
-> **GPU NVIDIA (optionnel)** : le compose réserve les GPU via `deploy.resources` (nvidia runtime). Sans GPU, retirez le bloc `deploy:` de `docker-compose.yml` — tout le reste fonctionne normalement.
+### Sans GPU NVIDIA
+
+Le `docker-compose.yml` réserve les GPU via `deploy.resources` (runtime nvidia). Sans GPU — ou sans nvidia-container-toolkit — retirez ce bloc :
+
+```yaml
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+```
+
+Tout le reste fonctionne normalement ; la section GPUs reste simplement vide.
+
+### Mettre à jour
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+### Arrêter
+
+```bash
+docker compose down
+```
+
+### Configuration
+
+Aucune configuration n'est nécessaire. Variables optionnelles du backend (via `environment:` du service `backend` dans le compose) :
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `PORT` | `3001` | Port interne du backend (proxifié par nginx) |
+
+> Pour exposer l'UI sur un autre port que 8081, modifiez la section `ports:` du service `frontend` (ex: `"9090:80"`).
 
 ## Structure
 
@@ -45,6 +94,7 @@ L'application est disponible sur **http://localhost:8081**.
 ├── frontend/
 │   ├── src/
 │   │   ├── components/ # Dashboard, ContainerDetail, Terminal, DeployModal…
+│   │   ├── lib/        # hook de thème dark/light
 │   │   ├── types.ts
 │   │   └── App.tsx
 │   ├── nginx.conf      # Proxy /api + WebSocket
@@ -65,6 +115,18 @@ L'application est disponible sur **http://localhost:8081**.
 | POST | `/api/deploy/github` | Déploiement d'un repo GitHub |
 | GET | `/api/events/deploy/:id` | Logs de déploiement (SSE) |
 | WS | `/api/exec/:id` | Terminal interactif |
+
+## Développement
+
+Environnement de dev local (hors Docker) :
+
+```bash
+# Backend (port 3001)
+cd backend && npm install && npm start
+
+# Frontend (port 5173, proxy /api → localhost:3001)
+cd frontend && npm install && npm run dev
+```
 
 ## Note sécurité
 

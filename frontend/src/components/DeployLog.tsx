@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface LogEntry {
   type: string;
@@ -10,6 +11,14 @@ interface Props {
   deployId: string;
   onDone: () => void;
 }
+
+const logColors: Record<string, string> = {
+  error: 'text-red-500',
+  cmd: 'text-amber-600 dark:text-amber-400',
+  success: 'text-emerald-600 dark:text-emerald-400',
+  info: 'text-sky-600 dark:text-sky-400',
+  output: 'text-muted',
+};
 
 export default function DeployLog({ deployId, onDone }: Props) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -51,51 +60,53 @@ export default function DeployLog({ deployId, onDone }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const statusColor = status === 'success' ? 'text-green-400' : status === 'error' ? 'text-red-400' : 'text-blue-400';
+  const statusLabel = status === 'running' ? 'In progress' : status === 'success' ? 'Completed' : 'Failed';
+  const statusColor =
+    status === 'success'
+      ? 'text-emerald-600 dark:text-emerald-400'
+      : status === 'error'
+        ? 'text-red-500'
+        : 'text-sky-600 dark:text-sky-400';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] mx-4 flex flex-col">
-        <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Deploy logs">
+      <div className="bg-elevated border border-line rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] mx-4 flex flex-col">
+        <div className="px-6 h-16 border-b border-line flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold">Deploy logs</h2>
-            <span className={`text-sm ${statusColor}`}>
-              {status === 'running' && 'In progress...'}
-              {status === 'success' && 'Completed'}
-              {status === 'error' && 'Failed'}
+            <h2 className="text-base font-semibold tracking-tight">Deploy logs</h2>
+            <span className={`text-xs font-medium inline-flex items-center gap-1.5 ${statusColor}`}>
+              {status === 'running' && <Loader2 size={12} className="animate-spin" />}
+              {statusLabel}
             </span>
           </div>
           <div className="flex gap-2">
             <button
               onClick={handleCopyLogs}
               disabled={logs.length === 0}
-              className="px-3 py-1 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:opacity-50 rounded text-sm transition-colors"
+              className="px-3 h-8 rounded-lg border border-line text-xs font-medium hover:bg-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20"
             >
               {copied ? 'Copied!' : 'Copy logs'}
             </button>
-            <button onClick={onDone} className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm transition-colors">
+            <button
+              onClick={onDone}
+              className="px-3 h-8 rounded-lg border border-line text-xs font-medium hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20"
+            >
               Close
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed">
+        <div className="flex-1 overflow-y-auto px-6 py-4 font-mono text-xs leading-relaxed">
           {logs.length === 0 && status === 'running' && (
-            <div className="text-gray-500">Waiting for logs...</div>
+            <div className="text-muted">Waiting for logs...</div>
           )}
           {logs.map((log, i) => (
-            <div key={i} className={`whitespace-pre-wrap ${
-              log.type === 'error' ? 'text-red-400' :
-              log.type === 'cmd' ? 'text-yellow-400' :
-              log.type === 'success' ? 'text-green-400' :
-              log.type === 'info' ? 'text-blue-300' :
-              'text-gray-300'
-            }`}>
+            <div key={i} className={`whitespace-pre-wrap ${logColors[log.type] ?? 'text-muted'}`}>
               {log.text}
             </div>
           ))}
-          {status === 'running' && (
-            <div className="inline-flex items-center gap-1.5 text-gray-500 mt-1">
-              <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          {status === 'running' && logs.length > 0 && (
+            <div className="inline-flex items-center gap-1.5 text-muted mt-1">
+              <Loader2 size={11} className="animate-spin" />
               Running...
             </div>
           )}
