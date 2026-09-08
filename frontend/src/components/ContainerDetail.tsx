@@ -138,12 +138,11 @@ export default function ContainerDetail({ containerId, onBack, onAction, onDelet
           yAxisDomain={[0, 100]}
         />
         <MetricChart
-          title="Memory Usage (CPU + GPU)"
+          title="Memory Usage"
           data={history}
-          dataKey="memory_percent_combined"
+          dataKey="memory_percent"
           unit="%"
           color="#10b981"
-          yAxisDomain={[0, 100]}
         />
       </div>
 
