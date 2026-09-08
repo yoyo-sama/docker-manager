@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Boxes, CircuitBoard, Cpu, ExternalLink, HardDrive, MemoryStick } from 'lucide-react';
+import { Boxes, CircuitBoard, Cpu, ExternalLink, HardDrive, MemoryStick, Play, Power, RotateCw } from 'lucide-react';
 import StatCard from './StatCard';
 import MetricChart from './MetricChart';
 import type { SystemMetrics, Container, HistoryPoint } from '../types';
@@ -7,6 +7,7 @@ import type { SystemMetrics, Container, HistoryPoint } from '../types';
 interface Props {
   containers: Container[];
   onContainerSelect: (id: string) => void;
+  onAction: (id: string, action: 'start' | 'stop' | 'restart') => void | Promise<void>;
 }
 
 function StatusBadge({ running }: { running: boolean }) {
@@ -24,10 +25,22 @@ function fmtGiB(bytes: number): string {
   return `${(bytes / 2 ** 30).toFixed(1)} GiB`;
 }
 
-export default function Dashboard({ containers, onContainerSelect }: Props) {
+export default function Dashboard({ containers, onContainerSelect, onAction }: Props) {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const runAction = async (e: React.MouseEvent, id: string, action: 'start' | 'stop' | 'restart') => {
+    e.stopPropagation();
+    if (busyId === id) return;
+    setBusyId(id);
+    try {
+      await onAction(id, action);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -223,7 +236,33 @@ export default function Dashboard({ containers, onContainerSelect }: Props) {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge running={container.running} />
+                    <div className="flex items-center gap-2.5">
+                      <StatusBadge running={container.running} />
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => runAction(e, container.id, container.running ? 'stop' : 'start')}
+                          disabled={busyId === container.id}
+                          title={container.running ? `Stop ${container.name}` : `Start ${container.name}`}
+                          aria-label={container.running ? `Stop container ${container.name}` : `Start container ${container.name}`}
+                          className={`w-7 h-7 rounded-md inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20 disabled:opacity-40 disabled:cursor-not-allowed ${
+                            container.running
+                              ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
+                              : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                          }`}
+                        >
+                          {container.running ? <Power size={14} strokeWidth={2} /> : <Play size={14} strokeWidth={2} />}
+                        </button>
+                        <button
+                          onClick={(e) => runAction(e, container.id, 'restart')}
+                          disabled={busyId === container.id}
+                          title={`Restart ${container.name}`}
+                          aria-label={`Restart container ${container.name}`}
+                          className="w-7 h-7 rounded-md inline-flex items-center justify-center text-muted hover:text-fg hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <RotateCw size={14} strokeWidth={2} />
+                        </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -173,7 +173,11 @@ function App() {
           )}
 
           {currentView === 'dashboard' && (
-            <Dashboard containers={containers} onContainerSelect={handleContainerSelect} />
+            <Dashboard
+              containers={containers}
+              onContainerSelect={handleContainerSelect}
+              onAction={handleAction}
+            />
           )}
 
           {currentView === 'dgx' && <DgxDashboard />}
