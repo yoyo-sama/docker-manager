@@ -79,13 +79,13 @@ docker compose down
 
 ### Configuration
 
-No configuration is required. Optional backend variables (through the `environment:` section of the `backend` service in compose):
+No configuration is required. Optional variables (through the `environment:` section of the `app` service in compose):
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `3001` | Internal backend port (proxied by nginx) |
+| `PORT` | `3001` | Internal server port (serves both the API and the frontend) |
 
-> To expose the UI on a port other than 8081, edit the `ports:` section of the `frontend` service (e.g. `"9090:80"`).
+> To expose the UI on a port other than 8081, edit the `ports:` section of the `app` service (e.g. `"9090:3001"`).
 
 ## Structure
 
