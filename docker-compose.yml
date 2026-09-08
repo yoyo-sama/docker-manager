@@ -1,8 +1,10 @@
 services:
-  backend:
-    build: ./backend
+  app:
+    build: .
     restart: unless-stopped
     pid: host
+    ports:
+      - "8081:3001"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -14,11 +16,3 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-
-  frontend:
-    build: ./frontend
-    restart: unless-stopped
-    ports:
-      - "8081:80"
-    depends_on:
-      - backend

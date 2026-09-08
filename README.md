@@ -23,7 +23,7 @@ Web-based Docker manager: monitor and control your containers from the browser �
 |---|---|
 | Frontend | React 19, Vite, TypeScript, TailwindCSS v4, xterm.js, Recharts, Lucide |
 | Backend | Node.js, Express 5, dockerode, ws (WebSocket), SSE |
-| Reverse proxy | nginx (static + `/api` proxy + WebSocket upgrade) |
+| Packaging | Single multi-stage Docker image (frontend build + backend + gzip compression) |
 
 ## Installation
 
@@ -45,6 +45,8 @@ docker compose up -d --build
 ```
 
 The application is available at **http://localhost:8081**.
+
+Everything runs in a **single container**: the Node backend serves both the API (including the WebSocket terminal) and the static frontend.
 
 ### Without an NVIDIA GPU
 
@@ -89,18 +91,17 @@ No configuration is required. Optional backend variables (through the `environme
 
 ```
 ├── backend/
-│   ├── index.js        # REST API, WebSocket exec, GitHub deploy
+│   ├── index.js        # REST API, WebSocket exec, GitHub deploy, static serving
 │   ├── hostports.js    # Listening port detection (host-network containers)
 │   ├── metrics.js      # System / GPU / container stats metrics
-│   └── Dockerfile
 ├── frontend/
 │   ├── src/
 │   │   ├── components/ # Dashboard, ContainerDetail, Terminal, DeployModal…
 │   │   ├── lib/        # dark/light theme hook
 │   │   ├── types.ts
 │   │   └── App.tsx
-│   ├── nginx.conf      # /api proxy + WebSocket
-│   └── Dockerfile
+│   └── vite.config.ts  # /api proxy for local development
+├── Dockerfile          # Single multi-stage image (frontend build + backend)
 └── docker-compose.yml
 ```
 

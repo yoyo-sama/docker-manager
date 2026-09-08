@@ -23,7 +23,7 @@ Gestionnaire Docker web : surveillez et pilotez vos conteneurs depuis le navigat
 |---|---|
 | Frontend | React 19, Vite, TypeScript, TailwindCSS v4, xterm.js, Recharts, Lucide |
 | Backend | Node.js, Express 5, dockerode, ws (WebSocket), SSE |
-| Reverse proxy | nginx (static + proxy `/api` + upgrade WebSocket) |
+| Packaging | Image Docker unique multi-stage (build frontend + backend + compression gzip) |
 
 ## Installation
 
@@ -45,6 +45,8 @@ docker compose up -d --build
 ```
 
 L'application est disponible sur **http://localhost:8081**.
+
+Tout tourne dans un **conteneur unique** : le backend Node sert à la fois l'API (y compris le terminal WebSocket) et le frontend statique.
 
 ### Sans GPU NVIDIA
 
@@ -89,18 +91,17 @@ Aucune configuration n'est nécessaire. Variables optionnelles du backend (via `
 
 ```
 ├── backend/
-│   ├── index.js        # API REST, WebSocket exec, déploiement GitHub
+│   ├── index.js        # API REST, WebSocket exec, déploiement GitHub, fichiers statiques
 │   ├── hostports.js    # Détection des ports d'écoute (conteneurs host-network)
 │   ├── metrics.js      # Métriques système / GPU / stats conteneurs
-│   └── Dockerfile
 ├── frontend/
 │   ├── src/
 │   │   ├── components/ # Dashboard, ContainerDetail, Terminal, DeployModal…
 │   │   ├── lib/        # hook de thème dark/light
 │   │   ├── types.ts
 │   │   └── App.tsx
-│   ├── nginx.conf      # Proxy /api + WebSocket
-│   └── Dockerfile
+│   └── vite.config.ts  # Proxy /api pour le dev local
+├── Dockerfile          # Image unique multi-stage (build frontend + backend)
 └── docker-compose.yml
 ```
 
