@@ -1,52 +1,54 @@
 # Docker Manager
 
-Gestionnaire Docker web : surveillez et pilotez vos conteneurs depuis le navigateur — dashboard système, terminal interactif, déploiement direct depuis GitHub.
+[![en](https://img.shields.io/badge/lang-en-blue)](README.md) [![fr](https://img.shields.io/badge/lang-fr-red)](README.fr.md)
+
+Web-based Docker manager: monitor and control your containers from the browser — system dashboard, interactive terminal, one-click GitHub deploy.
 
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)
 
-## Fonctionnalités
+## Features
 
-- **Dashboard système** : CPU, mémoire, disque, GPU NVIDIA (via `nvidia-smi`), compteurs conteneurs/images/volumes, graphiques temps réel avec dégradés
-- **Liste des conteneurs** : statut, image, politique de redémarrage, **répertoire de lancement** (bind mounts hôtes + WorkingDir) et **lien direct vers l'app** pour chaque port TCP publié
-- **Auto-détection des ports host-network** : les apps en `network_mode: host` (sans port publié) voient leurs ports d'écoute détectés via `/proc` (croisement inodes sockets ↔ tables TCP)
-- **Détail conteneur** : stats CPU/RAM (mémoire CPU + GPU VRAM), réseau, graphiques d'historique, configuration (commande, ports, mounts)
-- **Terminal interactif** : shell in-browser (xterm.js + WebSocket) dans n'importe quel conteneur actif, avec détection automatique bash/sh et redimensionnement
-- **Déploiement GitHub** : clone → build → run d'un repo directement depuis l'UI, avec logs en direct (SSE), timeout et nettoyage automatiques
-- **Actions** : start / stop / restart / delete avec confirmation
-- **Thème sombre / clair** : interface monochrome moderne (police Inter, icônes Lucide, JetBrains Mono pour les données techniques), bascule persistée et défaut selon la préférence système
+- **System dashboard**: CPU, memory, disk, NVIDIA GPUs (via `nvidia-smi`), container/image/volume counters, real-time gradient charts
+- **Container list**: status, image, restart policy, **launch directory** (host bind mounts + WorkingDir) and a **direct link to the app** for every published TCP port
+- **Host-network port auto-detection**: apps running with `network_mode: host` (no published ports) get their listening ports detected through `/proc` (socket inodes ↔ TCP tables matching)
+- **Container detail**: CPU/RAM stats (CPU memory + GPU VRAM), network, history charts, configuration (command, ports, mounts)
+- **Interactive terminal**: in-browser shell (xterm.js + WebSocket) in any running container, with automatic bash/sh detection and resizing
+- **GitHub deploy**: clone → build → run a repository straight from the UI, with live logs (SSE), timeout and automatic cleanup
+- **Actions**: start / stop / restart / delete with confirmation
+- **Dark / light theme**: modern monochrome interface (Inter font, Lucide icons, JetBrains Mono for technical data), persisted toggle defaulting to system preference
 
 ## Stack
 
-| Composant | Technologies |
+| Component | Technologies |
 |---|---|
 | Frontend | React 19, Vite, TypeScript, TailwindCSS v4, xterm.js, Recharts, Lucide |
 | Backend | Node.js, Express 5, dockerode, ws (WebSocket), SSE |
-| Reverse proxy | nginx (static + proxy `/api` + upgrade WebSocket) |
+| Reverse proxy | nginx (static + `/api` proxy + WebSocket upgrade) |
 
 ## Installation
 
-### Prérequis
+### Prerequisites
 
-- [Docker Engine](https://docs.docker.com/get-docker/) ≥ 20.10 avec [Compose v2](https://docs.docker.com/compose/) (`docker compose`)
-- Le socket Docker `/var/run/docker.sock` doit être accessible à l'utilisateur qui lance le compose (le backend y accède via un bind mount)
-- *(Optionnel)* Pilotes NVIDIA + [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) pour les métriques GPU
+- [Docker Engine](https://docs.docker.com/get-docker/) ≥ 20.10 with [Compose v2](https://docs.docker.com/compose/) (`docker compose`)
+- The Docker socket `/var/run/docker.sock` must be accessible to the user running compose (the backend mounts it as a bind mount)
+- *(Optional)* NVIDIA drivers + [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) for GPU metrics
 
-### Installer et démarrer
+### Install and start
 
 ```bash
-# 1. Cloner le repo
+# 1. Clone the repository
 git clone https://github.com/yoyo-sama/docker-manager.git
 cd docker-manager
 
-# 2. Construire et démarrer (aucune variable d'environnement requise)
+# 2. Build and start (no environment variables required)
 docker compose up -d --build
 ```
 
-L'application est disponible sur **http://localhost:8081**.
+The application is available at **http://localhost:8081**.
 
-### Sans GPU NVIDIA
+### Without an NVIDIA GPU
 
-Le `docker-compose.yml` réserve les GPU via `deploy.resources` (runtime nvidia). Sans GPU — ou sans nvidia-container-toolkit — retirez ce bloc :
+The `docker-compose.yml` reserves GPUs through `deploy.resources` (nvidia runtime). Without a GPU — or without nvidia-container-toolkit — remove this block:
 
 ```yaml
     deploy:
@@ -58,16 +60,16 @@ Le `docker-compose.yml` réserve les GPU via `deploy.resources` (runtime nvidia)
               capabilities: [gpu]
 ```
 
-Tout le reste fonctionne normalement ; la section GPUs reste simplement vide.
+Everything else works normally; the GPUs section simply stays empty.
 
-### Mettre à jour
+### Update
 
 ```bash
 git pull
 docker compose up -d --build
 ```
 
-### Arrêter
+### Stop
 
 ```bash
 docker compose down
@@ -75,59 +77,59 @@ docker compose down
 
 ### Configuration
 
-Aucune configuration n'est nécessaire. Variables optionnelles du backend (via `environment:` du service `backend` dans le compose) :
+No configuration is required. Optional backend variables (through the `environment:` section of the `backend` service in compose):
 
-| Variable | Défaut | Description |
+| Variable | Default | Description |
 |---|---|---|
-| `PORT` | `3001` | Port interne du backend (proxifié par nginx) |
+| `PORT` | `3001` | Internal backend port (proxied by nginx) |
 
-> Pour exposer l'UI sur un autre port que 8081, modifiez la section `ports:` du service `frontend` (ex: `"9090:80"`).
+> To expose the UI on a port other than 8081, edit the `ports:` section of the `frontend` service (e.g. `"9090:80"`).
 
 ## Structure
 
 ```
 ├── backend/
-│   ├── index.js        # API REST, WebSocket exec, déploiement GitHub
-│   ├── hostports.js    # Détection des ports d'écoute (conteneurs host-network)
-│   ├── metrics.js      # Métriques système / GPU / stats conteneurs
+│   ├── index.js        # REST API, WebSocket exec, GitHub deploy
+│   ├── hostports.js    # Listening port detection (host-network containers)
+│   ├── metrics.js      # System / GPU / container stats metrics
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
 │   │   ├── components/ # Dashboard, ContainerDetail, Terminal, DeployModal…
-│   │   ├── lib/        # hook de thème dark/light
+│   │   ├── lib/        # dark/light theme hook
 │   │   ├── types.ts
 │   │   └── App.tsx
-│   ├── nginx.conf      # Proxy /api + WebSocket
+│   ├── nginx.conf      # /api proxy + WebSocket
 │   └── Dockerfile
 └── docker-compose.yml
 ```
 
 ## API
 
-| Méthode | Route | Description |
+| Method | Route | Description |
 |---|---|---|
-| GET | `/api/containers` | Liste des conteneurs (+ ports détectés, répertoires) |
-| GET | `/api/containers/:id` | Détail d'un conteneur |
-| GET | `/api/containers/:id/stats` | Stats live (CPU/RAM/réseau/VRAM) |
-| POST | `/api/containers/:id/start\|stop\|restart` | Actions du cycle de vie |
-| DELETE | `/api/containers/:id` | Suppression |
-| GET | `/api/system` | Métriques système + GPU |
-| POST | `/api/deploy/github` | Déploiement d'un repo GitHub |
-| GET | `/api/events/deploy/:id` | Logs de déploiement (SSE) |
-| WS | `/api/exec/:id` | Terminal interactif |
+| GET | `/api/containers` | Container list (+ detected ports, directories) |
+| GET | `/api/containers/:id` | Container detail |
+| GET | `/api/containers/:id/stats` | Live stats (CPU/RAM/network/VRAM) |
+| POST | `/api/containers/:id/start\|stop\|restart` | Lifecycle actions |
+| DELETE | `/api/containers/:id` | Remove container |
+| GET | `/api/system` | System + GPU metrics |
+| POST | `/api/deploy/github` | GitHub repository deploy |
+| GET | `/api/events/deploy/:id` | Deploy logs (SSE) |
+| WS | `/api/exec/:id` | Interactive terminal |
 
-## Développement
+## Development
 
-Environnement de dev local (hors Docker) :
+Local development environment (outside Docker):
 
 ```bash
 # Backend (port 3001)
 cd backend && npm install && npm start
 
-# Frontend (port 5173, proxy /api → localhost:3001)
+# Frontend (port 5173, /api proxy → localhost:3001)
 cd frontend && npm install && npm run dev
 ```
 
-## Note sécurité
+## Security note
 
-L'application n'a **pas d'authentification** et le terminal donne un shell dans les conteneurs. À réserver à un réseau local ou un environnement de confiance ; placez-la derrière un proxy avec authentification si exposée.
+The application has **no authentication** and the terminal grants a shell inside containers. Intended for a local network or trusted environment; put it behind an authenticating proxy if exposed.
